@@ -36,6 +36,7 @@ class User(db.Model):
     name = db.Column(db.String(36), nullable=True)
     email = db.Column(db.String(36),nullable=True)
     password = db.Column(db.String(36), nullable=True)
+    age = db.Column(db.String(30), nullable=True)
     username = db.Column(db.String(36), nullable = True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -98,7 +99,7 @@ class User_Schema(SQLAlchemyAutoSchema):
     id = fields.Str(required=False )
     name = fields.Str(required=True, validate=validate.Length(min=5,max=20))
     email = fields.Email(required=True)
-    password = fields.Str(required=True, load_only=True, validate=validate.Length(min=5))
+    password = fields.Str(required=True, validate=validate.Length(min=5))
     age = fields.Int(required=True, validate=validate.Range(min=18))
     username = fields.Str(required=True, validate=validate.Length(min=5,max=20))
     role = fields.Str(required=True, validate=validate.OneOf(
@@ -150,9 +151,41 @@ def product_create():
         return jsonify(err.messages),400
     
     
+#get all users    
+@app.route('/users',methods=['GET'])
+def get_users():
+    users=User.query.all()
     
+    return jsonify(users_schema.dump(users))
     
+#get one user
+@app.route('/user/<string:user_id>',methods=['GET'])
+def get_user(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'message':'innvalid request'}),400
+    return jsonify(user_schema.dump(user))
 
+
+#update user
+
+@app.route('/user/<string:user_id>',methods=['PUT'])
+def update_user(user_id):
+    user =User.query.get(user_id)
+    if not user:
+        return jsonify({'message':'invalid user'})
+    try:
+        update=user_schema.load(request.json,
+        instance = user)
+        
+        db.session.commit()
+        
+        return jsonify(user_schema.dump(update))
+    except ValidationError as err:
+        return jsonify(err.messages)
+    
+    
+        
 if __name__ == '__main__':
 
     with app.app_context():
