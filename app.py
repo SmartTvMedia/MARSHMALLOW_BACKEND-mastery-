@@ -182,7 +182,18 @@ def update_user(user_id):
         
         return jsonify(user_schema.dump(update))
     except ValidationError as err:
-        return jsonify(err.messages)
+        return jsonify(err.messages),400
+    
+    
+@app.route('/user/<string:user_id>',methods=['DELETE'])
+def delete_user(user_id):
+    user=User.query.get(user_id)
+    if not user:
+        return jsonify({'message':'user not found'}),400
+    db.session.delete(user)
+    db.session.commit()
+    
+    return jsonify({'message':"user deleted"})
     
     
         
